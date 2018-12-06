@@ -1,6 +1,6 @@
 # Ford_BikeShare
 
-R Markdown notebook is in progress, stay tuned! Currently covers most of the Load & Prep section.
+R Markdown document is in progress, stay tuned! Currently covers most of the Load & Prep section.
 
 Order of operations for R scripts:
 1. Load & Prep
