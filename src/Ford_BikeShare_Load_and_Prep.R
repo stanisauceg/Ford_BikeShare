@@ -121,10 +121,9 @@ data <- data %>%
   mutate(is_weekend = ifelse(weekday %in% c("Sat", "Sun"), "wk_end", "wk_day"),
          is_weekend = as.factor(is_weekend))
 
-
 # earlier, I converted station IDs to character. What do they look like?
-unique(data$start_station_id)
-unique(data$end_station_id)
+data$start_station_id %>% unique() %>% sort()
+
 # turn them back into numeric, converting "NULL" values into NAs
 data <- data %>%
   mutate(start_station_id = as.numeric(start_station_id),

@@ -1,5 +1,8 @@
 # to start, run all code from "Ford_BikeShare_Load_and_Prep.R"
 
+library(hexbin)
+library(viridis)
+
 ##### EDA, part 1 ######################################################
 
 #### *** univariate exploration ####
