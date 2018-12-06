@@ -204,10 +204,10 @@ rm(arrivals, departures)
 
 # make a table of station info (name, id, lat, long)
 station_info <- data_clean %>%
-  group_by(start_station_name, 
-           start_station_id, 
+  group_by(start_station_id, 
+           start_station_name, 
            start_station_latitude, 
-           start_station_longitude) %>%
+           start_station_longitude) %>% # this is the most specific grouping of stations by location
   summarize(count = n()) %>%
   group_by(start_station_name) %>%
   rename(station_name = start_station_name,
@@ -217,23 +217,30 @@ station_info <- data_clean %>%
 
 station_info
 
-# again, find repeat stations
+length(unique(station_info$station_id))
+length(unique(station_info$station_name))
+length(unique(data_clean$start_station_latitude))
+length(unique(data_clean$start_station_longitude))
+
+# 356 unique lat/long combos vs 349 unique latitudes vs 348 unique longitudes vs 346 unique station names vs 331 unique station IDs
+
+# find repeat stations
 station_count <- station_info %>%
   summarize(station_count = n()) %>%
   arrange(desc(station_count))
-station_count
 
-# recall, 3 stations w/ duplicates (incl "coming soon")
-# also, 4 stations repeat w/o any change in name
-
-# 343 station/lat-long combos
-# 4 stations have two lat-long locations w/o change in names, so these must be different docks at same stations
+head(station_count, n = 10)
 
 id_count <- station_info %>%
   group_by(station_id) %>%
   summarise(n_per_id = n()) %>%
   arrange(desc(n_per_id))
-id_count
+
+head(id_count, n = 20)
+
+# 19 station IDs are associated with >1 lat/long location. 9 station names are associated with >1 lat/long locations. 
+# So these are likely different dock locations at the same general location.
+# The docks might be operated simultaneously, or sequentially (repositioned over time). Can check this later if necessary.
 
 # join station stats
 station_stats <- station_stats %>%
@@ -252,34 +259,42 @@ rm(id_count, station_info, station_count)
 
 station_stats %>% print(n = 20)
 
-# why do some stations seem to repeat silently, i.e. identical name but appear 2+ times?
+# let's check further: why do some stations seem to repeat silently, i.e. identical name but appear 2+ times?
 temp <- station_stats %>%
   arrange(desc(station_count)) %>%
-  head(n = 20)
-as.data.frame(temp)
+  filter(station_count > 1)
+as.data.frame(temp) # this hack prints more decimal places than tbl's default does
 
-i <- seq(from = 1, to = 7, by = 2)
+# Shattuck at Hearst has very similar - but not identical - lat/long coordinates. What about the rest?
+i <- seq(from = 4, to = 18, by = 2)
 temp$station_latitude[i] - temp$station_latitude[i+1]
 temp$station_longitude[i] - temp$station_longitude[i+1]
-identical(temp$station_longitude[3], temp$station_longitude[4])
-# one station has identical longitudes but differing latitudes for its docks
-# this accounts for discrepancy btw 336 unique latitudes but 335 unique longitudes
 
-# also, otherwise the 4 "silent" repeat stations (i.e., no name change but different lat-long)
-# Doyle St at 59th St;
-# North Berkeley BART Station;
-# S. 4th St at San Carlos St; and
+identical(temp$station_longitude[2], temp$station_longitude[3])
+identical(temp$station_longitude[10], temp$station_longitude[11])
+
+# one station has identical longitudes but differing latitudes for its docks
+# this accounts for discrepancy btw the number of unique latitudes vs longitudes
+
+# so the "silent" repeat stations (i.e., no name change but different lat-long) are:
 # Shattuck Ave at Hearst Ave;
-# have identical arrival and departure counts, so we should ignore the disparate lat-long coordinates
+# 37th at West
+# S. 4th St at San Carlos St;
+# Doyle St at 59th St;
+# North Berkeley BART Station; and
+# Tamien Station
+
+# All have identical arrival and departure counts, since I initially grouped them by name. 
+# So we should pick a single set of lat-long coordinates for each.
 rm(i, temp)
 
 # check the duplicate stations
 station_stats %>% arrange(desc(station_count)) %>% print(n = 20)
 
-duplicates <- which(station_stats$station_count == 2)
+duplicates <- which(station_stats$station_count > 1)
 station_stats[duplicates,] # yep, checks out
 
-extras <- duplicates[c(2,4,6,8)]
+extras <- duplicates[c(2,4,6,7,9,11,13,15,17,19)]
 
 # delete the extras
 station_stats <- station_stats[-extras,]
@@ -289,7 +304,7 @@ rm(duplicates, extras)
 station_stats <- station_stats %>%
   select(-station_count, -n_per_id)
 
-station_stats %>% print(n = 20)
+station_stats %>% print(n = 10)
 
 # recalculate station ID counts
 new_id_counts <- station_stats %>%
@@ -304,9 +319,10 @@ station_stats <- station_stats %>%
   arrange(desc(n_per_id))
 rm(new_id_counts)
 
-head(station_stats, n = 20)
+station_stats %>% filter(n_per_id > 1) %>% print(n = "all")
+# here we can see sometimes slightly different names, and therefore station use stats are separate. To lump by ID, would need to recalculate.
 
-# so station ID is associated w/ a general location,
+# Overall, station ID is associated w/ a general location,
 # and different names (& data) are associated w/ slightly different positions of that station
 # so, either do the analysis by a single ID (and average the lat/long, and re-calculate ridership by station ID)
 # or keep stations separate by name for greater geographic precision.
