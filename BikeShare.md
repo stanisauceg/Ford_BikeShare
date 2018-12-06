@@ -395,7 +395,7 @@ data$start_station_id %>% unique() %>% sort()
 
 ```r
 # turn them back into numeric, converting "NULL" values into NAs
-data <- data %>%
+data %<>%
   mutate(start_station_id = as.numeric(start_station_id),
          end_station_id = as.numeric(end_station_id))
 ```
@@ -421,7 +421,7 @@ summary(data$start_station_id)
 
 ```r
 # convert "NULL" station names into NAs
-data <- data %>%
+data %<>%
   mutate(start_station_name = replace(start_station_name, which(start_station_name == "NULL"), NA),
          end_station_name = replace(end_station_name, which(end_station_name == "NULL"), NA))
 ```
@@ -1087,4 +1087,202 @@ So we can see how names can differ slightly, and therefore station use stats app
 Overall, station ID is associated w/ a general location, and different names (& data) are associated w/ slightly different positions of that station. So, either do the analysis by a single ID (and average the lat/long, and re-calculate ridership by station ID) or keep stations separate by name for greater geographic precision.
 
 
-Next up: tagging stations by city, and adding station elevations
+#### Goal 2: identify the city in which each station is located
+
+
+```r
+# cluster analysis of stations by lat-long, just for practice
+
+station_locations <- station_stats %>% select(station_latitude, station_longitude)
+dist_stations <- dist(station_locations, method = "euclidean") 
+# no crossing the international date line, no rescaling, no problem!
+hc_stations <- hclust(dist_stations, method = "complete")
+
+# extract clusters
+cluster_assigments <- cutree(hc_stations, k = 3)
+stations_clustered <- mutate(station_locations, cluster = cluster_assigments)
+```
+
+Plot the stations in lat-long space, colored by cluster
+
+![](BikeShare_files/figure-html/plot clusters-1.png)<!-- -->
+
+Looking good. Now tag each station by its cluster, and rename the clusters as appropriate. In fact, even without the cluster analysis, it looks clear that SF, East Bay, and SJ stations do not overlap by longitude, so we can use that to label stations.
+
+
+```r
+stations_clustered <- stations_clustered %>%
+  mutate(cluster = recode(cluster, '1' = "EastBay",
+                          '2' = "SanJose",
+                          '3' = "SanFrancisco")) %>%
+  rename(city = cluster)
+
+stations_clustered %>%
+  group_by(city) %>%
+  summarise(min_long = min(station_longitude),
+            max_long = max(station_longitude)) %>%
+  kable(caption = "range of station longitudes, by city")
+```
+
+
+
+Table: range of station longitudes, by city
+
+city             min_long    max_long
+-------------  ----------  ----------
+EastBay         -122.2997   -122.2130
+SanFrancisco    -122.4737   -122.3857
+SanJose         -121.9125   -121.8333
+
+We can label each station with its city based on the longitude bin into which it falls:
+
+
+```r
+label_city_by_long <- function(long) {
+  if_else (long > -122, "SanJose",
+           if_else (long < -122.3, "SanFrancisco",
+                    "EastBay"))
+}
+
+# add city column to station_stats
+station_stats <- station_stats %>%
+  mutate(city = label_city_by_long(station_longitude)) %>%
+  select(station_id:station_longitude, city, departure_count:prop_inflow)
+
+ggplot(station_stats, aes(x = station_longitude, y = station_latitude, color = city)) + geom_point()
+```
+
+![](BikeShare_files/figure-html/label stations by city-1.png)<!-- -->
+
+```r
+# success
+
+rm(station_locations, hc_stations, stations_clustered, cluster_assigments, dist_stations)
+```
+
+#### Goal 3: identify stations attached to regional transit
+
+For now, use text matching to find any station whose name contains at least one of the following keywords:
+* BART
+* train
+* station
+* ferry
+
+
+```r
+transit <- unique(c(grep("BART", station_stats$station_name, value = TRUE),
+                    grep("train", station_stats$station_name, ignore.case = TRUE, value = TRUE),
+                    grep("station", station_stats$station_name, ignore.case = TRUE, value = TRUE),
+                    grep("ferry", station_stats$station_name, ignore.case = TRUE, value = TRUE)))[-22] # ignore Outside Lands temp station
+
+station_stats <- station_stats %>%
+  mutate(is_transit = station_name %in% transit)
+
+rm(transit)
+```
+
+
+#### Goal 4: Add elevation to station_stats
+
+Create a spatial points data frame from the lat/long coordinates for each station, then connect to the USGS Elevation Point Query Service.
+This takes some time (~2 seconds/station), so I save the output locally, then read it back in later (as long as I haven't added new data). The end product is the elevation, in meters, of each station.
+
+
+```r
+coord_df <- station_stats %>% select(station_longitude, station_latitude)
+prj_dd <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+# Create SpatialPoints
+sp <- SpatialPoints(coord_df, proj4string = CRS(prj_dd))
+
+# Create SpatialPointsDataFrame
+spdf <- SpatialPointsDataFrame(sp, proj4string = CRS(prj_dd), data = station_stats)
+
+# use USGS Elevation Point Query Service (slow, USA only)
+spdf_elev_epqs <- get_elev_point(spdf, src = "epqs", units = "meters")
+# spdf_elev_epqs # this took a while, so export the results for future use
+
+readr::write_csv(as.data.frame(spdf_elev_epqs), 
+                 path = file.path("results", "station_elevation_df.csv"))
+rm(coord_df, sp, spdf, spdf_elev_epqs, prj_dd)
+```
+
+
+```
+## Parsed with column specification:
+## cols(
+##   station_id = col_integer(),
+##   n_per_id = col_integer(),
+##   station_name = col_character(),
+##   station_latitude = col_double(),
+##   station_longitude = col_double(),
+##   city = col_character(),
+##   departure_count = col_integer(),
+##   arrival_count = col_integer(),
+##   net_change = col_integer(),
+##   prop_inflow = col_double(),
+##   is_transit = col_logical(),
+##   elevation = col_double(),
+##   elevation.1 = col_integer(),
+##   elev_units = col_character(),
+##   station_longitude.1 = col_double(),
+##   station_latitude.1 = col_double()
+## )
+```
+
+Add elevation to station info
+
+
+```r
+# align rows of the two data frames, just in case
+spdf_elev_epqs %<>% arrange(station_id, station_name)
+station_stats %<>% arrange(station_id, station_name)
+
+# add it in
+station_stats$elevation <- spdf_elev_epqs$elevation
+
+rm(spdf_elev_epqs)
+```
+
+#### Goal 5: Reincorporate select station stats into primary data frame
+
+Append elevation & transit linkage status to the start and end stations of each ride in 'data_clean'
+
+
+```r
+data_clean <- data_clean %>% 
+  arrange(start_time) %>% 
+  left_join(station_stats, by = c("start_station_name" = "station_name")) %>%
+  mutate(start_station_city = city,
+         start_station_is_transit = is_transit,
+         start_station_elevation = elevation) %>%
+  select(start_time:start_station_longitude, start_station_city:start_station_elevation,
+         end_station_id:end_station_longitude, duration_sec, bike_id:is_weekend) %>%
+  left_join(station_stats, by = c("end_station_name" = "station_name")) %>%
+  mutate(end_station_city = city,
+         end_station_is_transit = is_transit,
+         end_station_elevation = elevation) %>%
+  select(start_time, start_station_id:start_station_elevation,
+         end_time, end_station_id:end_station_longitude, end_station_city:end_station_elevation,
+         duration_sec:is_weekend) %>%
+  mutate(elev_change = end_station_elevation - start_station_elevation)
+
+data_clean %>% head(n = 10) %>% kable(caption = "rides are now clean and ready for analysis")
+```
+
+
+
+Table: rides are now clean and ready for analysis
+
+start_time             start_station_id  start_station_name                                    start_station_latitude   start_station_longitude  start_station_city   start_station_is_transit    start_station_elevation  end_time               end_station_id  end_station_name                                                   end_station_latitude   end_station_longitude  end_station_city   end_station_is_transit    end_station_elevation   duration_sec  bike_id   user_type     member_birth_year  member_gender   bike_share_for_all_trip   weekday    hour  is_weekend    elev_change
+--------------------  -----------------  ---------------------------------------------------  -----------------------  ------------------------  -------------------  -------------------------  ------------------------  --------------------  ---------------  ----------------------------------------------------------------  ---------------------  ----------------------  -----------------  -----------------------  ----------------------  -------------  --------  -----------  ------------------  --------------  ------------------------  --------  -----  -----------  ------------
+2017-06-28 09:47:36                  21  Montgomery St BART Station (Market St at 2nd St)                    37.78963                 -122.4008  SanFrancisco         TRUE                                           8.68  2017-06-28 09:54:41                48  2nd St at S Park St                                                            37.78241               -122.3927  SanFrancisco       FALSE                                     14.35            424  240       Subscriber                 1985  Female          NA                        Wed           9  wk_day               5.67
+2017-06-28 09:47:41                  58  Market St at 10th St                                                37.77662                 -122.4174  SanFrancisco         FALSE                                         17.01  2017-06-28 09:53:47                59  S Van Ness Ave at Market St                                                    37.77481               -122.4190  SanFrancisco       FALSE                                     16.22            366  669       Subscriber                 1981  Male            NA                        Wed           9  wk_day              -0.79
+2017-06-28 09:49:46                  25  Howard St at 2nd St                                                 37.78752                 -122.3974  SanFrancisco         FALSE                                          7.16  2017-06-28 09:52:55                48  2nd St at S Park St                                                            37.78241               -122.3927  SanFrancisco       FALSE                                     14.35            188  117       Subscriber                 1984  Male            NA                        Wed           9  wk_day               7.19
+2017-06-28 09:50:59                  81  Berry St at 4th St                                                  37.77588                 -122.3932  SanFrancisco         FALSE                                          3.29  2017-06-28 10:11:00                 9  Broadway at Battery St                                                         37.79857               -122.4009  SanFrancisco       FALSE                                      6.98           1201  77        Subscriber                 1985  Male            NA                        Wed           9  wk_day               3.69
+2017-06-28 09:56:39                  66  3rd St at Townsend St                                               37.77874                 -122.3927  SanFrancisco         FALSE                                          6.88  2017-06-28 10:03:51               321  5th at Folsom                                                                  37.78015               -122.4031  SanFrancisco       FALSE                                      4.23            431  316       Subscriber                 1973  Male            NA                        Wed           9  wk_day              -2.65
+2017-06-28 09:56:55                  15  San Francisco Ferry Building (Harry Bridges Plaza)                  37.79539                 -122.3942  SanFrancisco         TRUE                                           3.24  2017-06-28 10:15:02                90  Townsend St at 7th St                                                          37.77106               -122.4027  SanFrancisco       FALSE                                      3.79           1086  605       Subscriber                 1958  Male            NA                        Wed           9  wk_day               0.55
+2017-06-28 09:58:33                  23  The Embarcadero at Steuart St                                       37.79146                 -122.3910  SanFrancisco         FALSE                                          3.48  2017-06-28 10:10:44                44  Civic Center/UN Plaza BART Station (Market St at McAllister St)                37.78107               -122.4117  SanFrancisco       TRUE                                      13.25            730  272       Subscriber                 1980  Male            NA                        Wed           9  wk_day               9.77
+2017-06-28 10:00:54                  81  Berry St at 4th St                                                  37.77588                 -122.3932  SanFrancisco         FALSE                                          3.29  2017-06-28 10:08:10                45  5th St at Howard St                                                            37.78175               -122.4051  SanFrancisco       FALSE                                      7.22            435  400       Subscriber                 1991  Male            NA                        Wed          10  wk_day               3.93
+2017-06-28 10:00:59                  66  3rd St at Townsend St                                               37.77874                 -122.3927  SanFrancisco         FALSE                                          6.88  2017-06-28 10:10:49                22  Howard St at Beale St                                                          37.78976               -122.3946  SanFrancisco       FALSE                                      4.27            590  212       Subscriber                 1983  Male            NA                        Wed          10  wk_day              -2.61
+2017-06-28 10:09:06                  15  San Francisco Ferry Building (Harry Bridges Plaza)                  37.79539                 -122.3942  SanFrancisco         TRUE                                           3.24  2017-06-28 10:18:20                50  2nd St at Townsend St - Coming Soon                                            37.78053               -122.3903  SanFrancisco       FALSE                                      6.26            553  915       Subscriber                 1973  Male            NA                        Wed          10  wk_day               3.02
