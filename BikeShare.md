@@ -27,10 +27,10 @@ The variables in the data set are:
 * **End Station Latitude** - self explanatory, though we will see some stations have multiple sets of coordinates
 * **End Station Longitude** 
 * **Bike ID** - a unique ID for each bike
-* **User Type ** - “Subscriber” = member or “Customer” = casual
+* **User Type** - “Subscriber” = member or “Customer” = casual
 * **Member Year of Birth** - user sets birth year
 * **Member Gender** - user identifies as male, female, or other
-* **Bike share for all trip** - subsidized subscription program
+* **Bike share for all trip** - subsidized subscription program -> user type must be "Subscriber""
 
 ### Load libraries import data 
 If you have already unzipped the files, using fread() from the `data.table` package and then coercing to a tibble is faster than using read_csv() from `readr`.
