@@ -1,0 +1,415 @@
+---
+title: "SF bikeshare"
+author: "Michael Hutson"
+date: "December 6, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir='..')
+```
+# SF BikeShare
+
+The [San Francisco Bay Area bikeshare program](https://www.sfmta.com/getting-around/bike/bike-share) started as a joint public/private initiative, and is now operated by Motivate with sponsorship from Ford. Ford makes some [usage data publicly available](https://www.fordgobike.com/system-data), covering rides from 28 June 2017 to 31 October 2018 (at the time of this writing).
+
+The variables in the data set are:
+
+* **Trip Duration** - in seconds
+* **Start Time and Date** - When each ride began (i.e., bike removed from a dock)
+* **End Time and Date** - When each ride ended (i.e., bike returned to a dock)
+* **Start Station ID** - a unique ID for each station location (same as End)
+* **Start Station Name** - the landmark or street intersection of the station
+* **Start Station Latitude** - self explanatory, though we will see some stations have multiple sets of coordinates
+* **Start Station Longitude**
+* **End Station ID** - a unique ID for each station location (same as Start)
+* **End Station Name** - the landmark or street intersection of the station 
+* **End Station Latitude** - self explanatory, though we will see some stations have multiple sets of coordinates
+* **End Station Longitude** 
+* **Bike ID** - a unique ID for each bike
+* **User Type ** - “Subscriber” = member or “Customer” = casual
+* **Member Year of Birth** - user sets birth year
+* **Member Gender** - user identifies as male, female, or other
+* **Bike share for all trip** - subsidized subscription program
+
+### Load libraries import data 
+If you have already unzipped the files, using fread() from the `data.table` package and then coercing to a tibble is faster than using read_csv() from `readr`.
+
+```{r load, message = FALSE}
+
+library(data.table)
+library(magrittr)
+library(tidyverse)
+library(lubridate)
+library(sp)
+library(elevatr)
+library(knitr)
+```
+
+``` {r import data}
+# load 2017 data
+path <- file.path("data", "2017-fordgobike-tripdata.csv")
+data2017 <- data.table::fread(path) %>% as.tbl()
+
+# 2018 data are spread across 9 files, so list them out
+file_names <- list.files(path = "./data", pattern = "*2018")
+file_paths <- paste("./data/", file_names, sep = "")
+
+# load 2018 data into a list
+data2018 <- map(file_paths, data.table::fread) %>% map(as.tbl)
+
+data2017 %>% head()
+
+```
+
+## Wrangling, Pt 1
+
+#### Goal 1: combine all data into a single data frame
+
+Let's try collapsing all the 2018 data from a list into a single data frame
+
+```{r combine data fail, error = TRUE}
+data2018 <- bind_rows(data2018)
+```
+
+Fail! There is a column type mismatch for start station ID, and possibly others. Let's figure it out:
+
+```{r column type mismatch}
+# function definition: for a list of data tables ("list"), 
+# check that a given attribute ("attrib") of the columns 
+# is consistent across all items in the list
+compare_cols <- function(list, attrib) {
+  for (i in 1:(length(list)-1)) 
+    print(identical(map(list[[i]], attrib), map(list[[i+1]], attrib)))
+}
+
+# do all column names match across each month?
+compare_cols(data2018, names)
+
+# do all column classes match across each month?
+compare_cols(data2018, class)
+# no! changes from mo. 5 to mo. 6
+
+early_cols <- data2018[[5]] %>% sapply(class) %>% unname() # get col classes of month 5
+late_cols <- data2018[[6]] %>% sapply(class) %>% unname() # get col classes of month 6
+
+which(early_cols != late_cols)
+# cols 4 & 8 are different: start_station_id and end_station_id
+rm(early_cols, late_cols)
+
+data2018[[5]] %>% str()
+data2018[[6]] %>% str()
+```
+
+So the station IDs switch to character starting in June 2018. The same problem crops up when combining 2017 with 2018.
+
+```{r combine data}
+
+# make two internally-consistent subsets of the data
+data2018a <- bind_rows(data2018[1:5])
+data2018b <- bind_rows(data2018[-c(1:5)])
+
+# change station ID columns to char
+data2018a %<>%
+  mutate(start_station_id = as.character(start_station_id),
+         end_station_id = as.character(end_station_id))
+# now all 2018 data should have consistent formatting
+
+# bind all 2018 data together, overwriting initial list
+data2018 <- bind_rows(data2018a, data2018b)
+# success
+
+## now to combine 2017 and 2018
+cols2017 <- data2017 %>% sapply(class) %>% unname() # col classes
+cols2018 <- data2018 %>% sapply(class) %>% unname() # col classes
+
+which(cols2017 != cols2018)
+str(data2017)
+str(data2018)
+# cols 4 & 8 are different, and col 16 is new for 2018
+
+# change station ID columns to char
+data2017 %<>%
+  mutate(start_station_id = as.character(start_station_id),
+         end_station_id = as.character(end_station_id))
+
+# combine years
+data <- data2017 %>% bind_rows(data2018)
+
+# cleanup
+rm(cols2017, cols2018, data2017, data2018, data2018a, data2018b, path, file_names, file_paths)
+
+str(data)
+
+```
+
+Success!
+
+#### Goal 2: set the classes of variables
+##### *and a few more useful tweaks*
+
+Ridership patterns might cycle every week, so pull out the day of the week from ride start. And, come to think of it, the biggest difference might be by weekday vs weekend.
+
+``` {r covert column classes}
+# convert column types
+data %<>%
+  mutate(member_gender = as.factor(member_gender),
+         user_type = as.factor(user_type),
+         bike_share_for_all_trip = as.factor(bike_share_for_all_trip),
+         start_time = ymd_hms(start_time),
+         end_time = ymd_hms(end_time),
+         bike_id = as.character(bike_id))
+
+# create new variables: weekday (split out the day of the week), hour (ride start hour)
+data %<>%
+  mutate(weekday = factor(wday(start_time, label = TRUE), ordered = FALSE),
+         hour = hour(start_time))
+
+# simplify weekday even further, to binary is_weekend
+data %<>%
+  mutate(is_weekend = ifelse(weekday %in% c("Sat", "Sun"), "wk_end", "wk_day"),
+         is_weekend = as.factor(is_weekend))
+
+# earlier, I converted station IDs to character. What do they look like?
+data$start_station_id %>% unique() %>% sort()
+
+# turn them back into numeric, converting "NULL" values into NAs
+data <- data %>%
+  mutate(start_station_id = as.numeric(start_station_id),
+         end_station_id = as.numeric(end_station_id))
+
+summary(data$start_station_id)
+
+# convert "NULL" station names into NAs
+data <- data %>%
+  mutate(start_station_name = replace(start_station_name, which(start_station_name == "NULL"), NA),
+         end_station_name = replace(end_station_name, which(end_station_name == "NULL"), NA))
+
+```
+
+#### Goal 3: address the NA stations
+
+What is going on with all those NA stations? Count them up, and cross-check names and IDs:
+
+``` {r NA stations 1}
+# how many unknown stations?
+sum(is.na(data$start_station_id))
+sum(is.na(data$start_station_name))
+
+data %>%
+  filter(is.na(start_station_name)) %>%
+  group_by(start_station_id) %>%
+  summarise(count = n())
+# all unnamed stations lack IDs
+
+data %>%
+  filter(is.na(start_station_id)) %>%
+  group_by(start_station_name) %>%
+  summarise(count = n())
+# all no-ID stations also lack names - and it's the same number, so 1:1 match
+```
+
+For now, I will create a dataset without all those NA stations, since they are a small fraction of total. But we will return to them later, since there might be an important reason for all those NAs.
+
+```{r NA stations 2}
+# what fraction?
+sum(is.na(data$start_station_name)) / nrow(data)
+# approx. 0.5%
+
+# further, all stations starting at NA also end at NA:
+data %>%
+  filter(is.na(start_station_name)) %>%
+  group_by(end_station_name) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+# do the deed
+data_clean <- data %>%
+  filter(!is.na(start_station_name))
+# now, all rides are to/from named stations
+
+summary(data_clean)
+
+```
+
+## Wrangling, Pt 2
+
+#### Goal 1: Summarize arrival/departure stats by station
+
+```{r station summary 1}
+departures <- data_clean %>%
+  group_by(start_station_name) %>%
+  summarise(departure_count = n()) %>%
+  rename(station_name = start_station_name)
+
+arrivals <- data_clean %>%
+  group_by(end_station_name) %>%
+  summarise(arrival_count = n()) %>%
+  rename(station_name = end_station_name)
+
+station_stats <- departures
+
+# expand station_stats w/ arrivals, net change, proportional change
+station_stats <- station_stats %>% 
+  left_join(arrivals) %>%
+  mutate(net_change = arrival_count - departure_count,
+         prop_inflow = net_change/departure_count)
+
+rm(arrivals, departures)
+
+head(station_stats)
+
+```
+
+Hmm, already we can see that some station IDs are repeated under slightly different names. Let's dig in to this a little.
+
+``` {r repeat stations 1}
+# make a table of station info (name, id, lat, long)
+station_info <- data_clean %>%
+  group_by(start_station_id, 
+           start_station_name, 
+           start_station_latitude, 
+           start_station_longitude) %>% # this is the most specific grouping of stations by location
+  summarize(count = n()) %>%
+  group_by(start_station_name) %>%
+  rename(station_name = start_station_name,
+         station_id = start_station_id,
+         station_latitude = start_station_latitude,
+         station_longitude = start_station_longitude) 
+
+station_info
+
+length(unique(station_info$station_id))
+length(unique(station_info$station_name))
+length(unique(data_clean$start_station_latitude))
+length(unique(data_clean$start_station_longitude))
+```
+
+At last check: 
+
+* 356 unique lat/long combos 
+* 349 unique latitudes 
+* 348 unique longitudes 
+* 346 unique station names 
+* 331 unique station IDs
+
+Let's find the repeat stations
+
+``` {r repeat stations 2}
+station_count <- station_info %>%
+  summarize(station_count = n()) %>%
+  arrange(desc(station_count))
+
+head(station_count, n = 10)
+
+id_count <- station_info %>%
+  group_by(station_id) %>%
+  summarise(n_per_id = n()) %>%
+  arrange(desc(n_per_id))
+
+head(id_count, n = 20)
+```
+
+19 station IDs are associated with >1 lat/long location. 9 station names are associated with >1 lat/long locations. Probably different dock locations at the same general location?
+
+The docks might be operated simultaneously, or sequentially (repositioned over time). Can check this later if necessary.
+
+``` {r station summary 2}
+# join station stats
+station_stats <- station_stats %>%
+  full_join(station_info) %>%
+  full_join(id_count) %>%
+  full_join(station_count) %>%
+  select(station_id, n_per_id, 
+         station_name, 
+         station_count, 
+         station_latitude,
+         station_longitude, 
+         departure_count:prop_inflow) %>%
+  arrange(desc(n_per_id), station_id)
+
+rm(id_count, station_info, station_count)
+
+station_stats %>% head(n = 20)
+```
+
+Let's investigate further: why do some stations seem to repeat silently, i.e. identical name but appear 2+ times?
+
+``` {r repeat stations 3}
+temp <- station_stats %>%
+  arrange(desc(station_count)) %>%
+  filter(station_count > 1)
+
+kable(temp)
+
+# Shattuck at Hearst has very similar - but not identical - lat/long coordinates. What about the rest?
+i <- seq(from = 4, to = 18, by = 2)
+temp$station_latitude[i] - temp$station_latitude[i+1]
+temp$station_longitude[i] - temp$station_longitude[i+1]
+
+identical(temp$station_longitude[2], temp$station_longitude[3])
+identical(temp$station_longitude[10], temp$station_longitude[11])
+
+rm(i, temp)
+```
+
+One station has identical longitudes but differing latitudes for its docks - this accounts for discrepancy btw the number of unique latitudes vs longitudes.
+
+So the "silent" repeat stations (i.e., no name change but different lat-long) are:
+* Shattuck Ave at Hearst Ave;
+* 37th at West
+* S. 4th St at San Carlos St;
+* Doyle St at 59th St;
+* North Berkeley BART Station; and
+* Tamien Station
+
+ All have identical arrival and departure counts, since I initially grouped them by name. 
+ So we should pick a single set of lat-long coordinates for each.
+
+```{r simplify coordinates}
+# check the duplicate stations
+station_stats %>% arrange(desc(station_count)) %>% print(n = 20)
+
+duplicates <- which(station_stats$station_count > 1)
+station_stats[duplicates,] # yep, checks out
+
+extras <- duplicates[c(2,4,6,7,9,11,13,15,17,19)]
+
+# delete the extras
+station_stats <- station_stats[-extras,]
+rm(duplicates, extras)
+```
+
+And, now that there is only one set of lat-long coordinates per station name, station_count is superfluous, and n_per_id is outdated
+
+```{r repeat stations 4}
+station_stats <- station_stats %>%
+  select(-station_count, -n_per_id)
+
+station_stats %>% print(n = 10)
+
+# recalculate station ID counts
+new_id_counts <- station_stats %>%
+  group_by(station_id) %>%
+  summarise(n_per_id = n()) %>%
+  arrange(desc(n_per_id))
+
+# add in the new station ID counts
+station_stats <- station_stats %>%
+  full_join(new_id_counts) %>%
+  select(station_id, n_per_id, station_name:prop_inflow) %>%
+  arrange(desc(n_per_id))
+rm(new_id_counts)
+
+station_stats %>% filter(n_per_id > 1) %>% kable()
+
+```
+
+So we can see how names can differ slightly, and therefore station use stats appear separate. To lump by ID, would need to recalculate.
+
+Overall, station ID is associated w/ a general location, and different names (& data) are associated w/ slightly different positions of that station. So, either do the analysis by a single ID (and average the lat/long, and re-calculate ridership by station ID) or keep stations separate by name for greater geographic precision.
+
+
+Next up: tagging stations by city, and adding station elevations
