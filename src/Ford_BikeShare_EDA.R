@@ -34,16 +34,41 @@ plot(data$bike_share_for_all_trip)
 hist(data$start_station_id, breaks = 323)
 hist(data$end_station_id, breaks = 323)
 
-# # how about NAs? convert them to the value 375 so they are at the end, for comparison
-# data_375_na_stations <- data %>% 
-#   mutate(start_station_id = replace(start_station_id, which(is.na(start_station_id)), 375),
-#          end_station_id = replace(end_station_id, which(is.na(end_station_id)), 375))
-# 
-# # the NAs (now ID 375) are the last bar on the right
-# hist(data_375_na_stations$start_station_id, breaks = 324)
-# hist(data_375_na_stations$end_station_id, breaks = 324)
-# 
-# rm(data_375_na_stations)
+station_stats %>%
+  arrange(desc(net_change)) %>%
+  select(station_name, city, departure_count, arrival_count, net_change, prop_inflow, is_transit, elevation)
+# everyone's getting out of Bancroft @ College (Berkeley near the stadium)
+# and presumably going downhill?
+# ditto McAllister St at Baker St, SF - I should find all station elevations
+# and everyone's trying to catch the train (Caltrain or BART)
+
+### add in subscriber info ####
+data_clean %>%
+  group_by(start_station_city, start_station_id) %>%
+  filter(!is.na(bike_share_for_all_trip)) %>%
+  summarise(subsidized_frac = sum(as.numeric(bike_share_for_all_trip)-1)/n()) %>%
+  # filter(start_station_city == "SanFrancisco") %>%
+  arrange(desc(subsidized_frac))
+
+# stations w/ most subsidized users in SF:
+station_stats %>% 
+  filter(station_id %in% c(34, 33, 358, 76, 10, 41, 62, 349)) %>% 
+  select(station_name, station_id, arrival_count, departure_count) %>% 
+  mutate(volume = arrival_count + departure_count) %>% 
+  select(-arrival_count, -departure_count)
+
+station_stats %>% 
+  filter(station_id %in% c(280, 296, 317, 357)) %>% 
+  select(station_name, station_id, arrival_count, departure_count) %>% 
+  mutate(volume = arrival_count + departure_count) %>% 
+  select(-arrival_count, -departure_count)
+
+station_stats %>% 
+  filter(city == "SanFrancisco") %>% 
+  select(station_name, elevation, station_id, arrival_count, departure_count, prop_inflow) %>% 
+  mutate(volume = arrival_count + departure_count) %>% 
+  select(-arrival_count, -departure_count) %>%
+  arrange(desc(elevation))
 
 ### * Ride profiles ####
 
