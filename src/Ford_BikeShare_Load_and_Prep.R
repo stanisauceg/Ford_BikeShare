@@ -6,8 +6,6 @@ library(tidyverse)
 library(lubridate)
 library(sp)
 library(elevatr)
-library(hexbin)
-library(viridis)
 library(corrplot)
 
 ### Import Data ############################################

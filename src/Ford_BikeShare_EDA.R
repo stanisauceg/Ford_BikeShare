@@ -5,6 +5,17 @@ library(viridis)
 
 ##### EDA, part 1 ######################################################
 
+data %>%
+  # select_if(is.numeric) %>%
+  skimr::skim()
+
+data %>%
+  map_df(~n_distinct(.)) %>%
+  gather(variable, num_distinct)
+
+# data %>%
+#   count(start_station_name, sort = TRUE)
+
 #### *** univariate exploration ####
 
 # bar plots of categorical (factor) columns
@@ -14,6 +25,14 @@ data %>%
   ggplot(aes(value)) +
   facet_wrap(~ key, scales = "free") +
   geom_bar()
+
+# numeric columns
+data %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+  geom_freqpoly()
 
 ### * User profiles ####
 
@@ -33,12 +52,11 @@ plot(data$bike_share_for_all_trip)
 ### * Station profiles ####
 
 # which stations are popular? bin by ID
-# ignoring NAs, 324 stations (323 breaks)
-hist(data$start_station_id, breaks = 323)
-hist(data$end_station_id, breaks = 323)
+ggplot(data, aes(x = start_station_id)) + geom_bar()
+ggplot(data, aes(x = end_station_id)) + geom_bar()
 
 station_stats %>%
-  arrange(desc(net_change)) %>%
+  arrange(net_change) %>%
   select(station_name, city, departure_count, arrival_count, net_change, prop_inflow, is_transit, elevation)
 # everyone's getting out of Bancroft @ College (Berkeley near the stadium)
 # and presumably going downhill?
