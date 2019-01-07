@@ -40,7 +40,7 @@ data %>%
 plot(data$member_gender)
 
 # ridership: age
-hist(1-data$member_birth_year)
+hist(2019-data$member_birth_year, main = "rider age")
 
 # one-off ride or subscriber ride?
 plot(data$user_type)
@@ -145,8 +145,9 @@ rm(M1, M2)
 
 ### * riders ####
 # age by gender
-ggplot(data, aes(x = 1-member_birth_year, color = member_gender)) +
-  geom_freqpoly()
+ggplot(data, aes(x = 2019-member_birth_year, color = member_gender)) +
+  geom_freqpoly() +
+  coord_cartesian(xlim = c(0,100))
 
 # gender, by subscription status
 ggplot(data, aes(x = user_type, fill = member_gender)) +
@@ -272,14 +273,14 @@ g + geom_density(aes(color = factor(month(start_time, label = TRUE, abbr = TRUE)
 
 # what's with station_id vs station_name vs station_lat/long? do they all match as expected?
 # count unique instances of each:
-length(unique(data$start_station_id))
-length(unique(data$end_station_id))
-length(unique(data$start_station_name))
-length(unique(data$end_station_name))
-length(unique(data$start_station_longitude))
-length(unique(data$start_station_latitude))
-length(unique(data$end_station_longitude))
-length(unique(data$end_station_latitude))
+n_distinct(data$start_station_id)
+n_distinct(data$end_station_id)
+n_distinct(data$start_station_name)
+n_distinct(data$end_station_name)
+n_distinct(data$start_station_longitude)
+n_distinct(data$start_station_latitude)
+n_distinct(data$end_station_longitude)
+n_distinct(data$end_station_latitude)
 
 # what are the lat-long ranges?
 range(data$start_station_longitude)
@@ -427,9 +428,19 @@ ggplot(na_trips, aes(x = member_gender)) + geom_bar()
 # roughly comparable to the usual breakdown of users
 
 # which bikes are involved?
-data %>% filter(is.na(start_station_id)) %>% group_by(bike_id) %>% summarise(count = n()) %>% arrange(bike_id) %>% print(n = "all")
+data %>% 
+  filter(is.na(start_station_id)) %>% 
+  group_by(bike_id) %>% 
+  summarise(count = n()) %>% 
+  arrange(bike_id) %>% 
+  print(n = "all")
 
-na_trip_bikes <- data %>% filter(is.na(start_station_id)) %>% select(bike_id) %>% arrange(bike_id) %>% unique() %>% unlist()
+na_trip_bikes <- data %>% 
+  filter(is.na(start_station_id)) %>% 
+  select(bike_id) %>% 
+  arrange(bike_id) %>% 
+  unique() %>% 
+  unlist()
 
 hist(as.numeric(na_trip_bikes))
 
@@ -438,7 +449,7 @@ data_clean %>% filter(bike_id %in% na_trip_bikes)
 data %>% filter(bike_id %in% na_trip_bikes)
 # NO, they do not
 
-# so, a certain subset of 199 bikes, the first of which was introduced in late June 2018 (ID #s in the 3k+ range),
+# so, a certain subset of 200 bikes, the first of which was introduced in late June 2018 (ID #s in the 3k+ range),
 # are associated with missing station IDs and names, and possibly spurrious lat/long coordinates
 # however, there is no reason to presume the ride start and stop times are incorrect??
 
@@ -487,21 +498,21 @@ data %>%
 
 summary(data_clean)
 
-length(unique(data_clean$start_station_id))
-length(unique(data_clean$end_station_id))
-# 331 unique station IDs
+n_distinct(data_clean$start_station_id)
+n_distinct(data_clean$end_station_id)
+# 334 unique station IDs
 
-length(unique(data_clean$start_station_name))
-length(unique(data_clean$end_station_name))
-# 346 unique station names
+n_distinct(data_clean$start_station_name)
+n_distinct(data_clean$end_station_name)
+# 351 unique station names
 
-length(unique(data_clean$start_station_latitude))
-length(unique(data_clean$end_station_latitude))
-# 349 unique station latitudes
+n_distinct(data_clean$start_station_latitude)
+n_distinct(data_clean$end_station_latitude)
+# 354 unique station latitudes
 
-length(unique(data_clean$start_station_longitude))
-length(unique(data_clean$end_station_longitude))
-# 348 unique station longitudes
+n_distinct(data_clean$start_station_longitude)
+n_distinct(data_clean$end_station_longitude)
+# 353 unique station longitudes
 
 # do some stations have multiple locations?
 data_clean %>%
@@ -588,15 +599,23 @@ g + geom_hex(aes(x = end_station_longitude, y = end_station_latitude))
 data_clean %>%
   group_by(start_station_name) %>%
   summarise(count = n()) %>%
-  arrange(desc(count))
+  arrange(desc(count)) %>%
+  head(n = 20) %>%
+  ggplot(aes(x = fct_reorder(as.factor(start_station_name), count), y = count)) + 
+  geom_bar(stat = "identity") + 
+  coord_flip()
 
 # most popular arrival stations
 data_clean %>%
   group_by(end_station_name) %>%
   summarise(count = n()) %>%
-  arrange(desc(count))
+  arrange(desc(count))%>%
+  head(n = 20) %>%
+  ggplot(aes(x = fct_reorder(as.factor(end_station_name), count), y = count)) + 
+  geom_bar(stat = "identity") + 
+  coord_flip()
 
-# what are the top 20 most popular trips?
+# what are the top 20 most popular trips? include rank of a given trip for its respsective start station
 data_clean %>%
   group_by(start_station_name, end_station_name) %>%
   summarise(n = n()) %>%
@@ -626,7 +645,7 @@ g + geom_bar(position = position_fill())
 
 
 ### usage by age: density distribution
-g <- ggplot(data_clean, aes(x = 2018-member_birth_year, color = start_station_city)) +
+g <- ggplot(data_clean, aes(x = year(today())-member_birth_year, color = start_station_city)) +
   xlab("rider age")
 
 g + geom_density()

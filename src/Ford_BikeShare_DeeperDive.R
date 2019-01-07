@@ -5,9 +5,9 @@
 
 ### *** Question 1: characterize a typical day's rides from station to station ####
 
-# set scaling factor manually: what is the duration, in days, of the data series?
-max(data_clean$start_time) - min(data_clean$start_time)
-span <- 490.5912
+# set scaling factor: what is the duration, in days, of the data series?
+time_diff <- max(data_clean$start_time) - min(data_clean$start_time)
+span <- time_diff[[1]]
 
 # randomly subsample the dataset to obtain an "average" day, at certain times
 sample_day <- sample_frac(data_clean, size = 1/span)
