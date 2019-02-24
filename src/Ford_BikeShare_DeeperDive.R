@@ -154,3 +154,5 @@ summary(m5)
 m6 <- lm(net_change ~ elevation * city, data = station_stats)
 anova(m6)
 summary(m6)
+
+lm((departure_count+arrival_count) ~ elevation * city, data = station_stats) %>% summary()
