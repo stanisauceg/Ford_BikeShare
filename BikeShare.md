@@ -1,5 +1,5 @@
 ---
-title: "SF bikeshare"
+title: "SF bikeshare load & prep"
 author: "Michael Hutson"
 date: "December 6, 2018"
 output:
@@ -120,6 +120,7 @@ compare_cols(data2018, names)
 ## [1] TRUE
 ## [1] TRUE
 ## [1] TRUE
+## [1] TRUE
 ```
 
 ```r
@@ -133,6 +134,7 @@ compare_cols(data2018, class)
 ## [1] TRUE
 ## [1] TRUE
 ## [1] FALSE
+## [1] TRUE
 ## [1] TRUE
 ## [1] TRUE
 ## [1] TRUE
@@ -268,7 +270,7 @@ str(data2018)
 ```
 
 ```
-## Classes 'tbl_df', 'tbl' and 'data.frame':	1598223 obs. of  16 variables:
+## Classes 'tbl_df', 'tbl' and 'data.frame':	1732358 obs. of  16 variables:
 ##  $ duration_sec           : int  75284 85422 71576 61076 39966 6477 453 180 996 825 ...
 ##  $ start_time             : chr  "2018-01-31 22:52:35.2390" "2018-01-31 16:13:34.3510" "2018-01-31 14:23:55.8890" "2018-01-31 14:53:23.5620" ...
 ##  $ end_time               : chr  "2018-02-01 19:47:19.8240" "2018-02-01 15:57:17.3100" "2018-02-01 10:16:52.1160" "2018-02-01 07:51:20.5000" ...
@@ -305,7 +307,7 @@ str(data)
 ```
 
 ```
-## Classes 'tbl_df', 'tbl' and 'data.frame':	2117923 obs. of  16 variables:
+## Classes 'tbl_df', 'tbl' and 'data.frame':	2252058 obs. of  16 variables:
 ##  $ duration_sec           : int  80110 78800 45768 62172 43603 9226 4507 4334 4150 4238 ...
 ##  $ start_time             : chr  "2017-12-31 16:57:39.6540" "2017-12-31 15:56:34.8420" "2017-12-31 22:45:48.4110" "2017-12-31 17:31:10.6360" ...
 ##  $ end_time               : chr  "2018-01-01 15:12:50.2450" "2018-01-01 13:49:55.6170" "2018-01-01 11:28:36.8830" "2018-01-01 10:47:23.5310" ...
@@ -361,36 +363,36 @@ data$start_station_id %>% unique() %>% sort()
 ##  [11] "11"   "110"  "112"  "113"  "114"  "115"  "116"  "118"  "119"  "120" 
 ##  [21] "121"  "122"  "123"  "124"  "125"  "126"  "127"  "129"  "13"   "130" 
 ##  [31] "131"  "132"  "133"  "134"  "136"  "137"  "138"  "139"  "14"   "140" 
-##  [41] "141"  "144"  "145"  "146"  "147"  "148"  "149"  "15"   "150"  "151" 
-##  [51] "152"  "153"  "154"  "155"  "156"  "157"  "158"  "159"  "16"   "160" 
-##  [61] "162"  "163"  "164"  "166"  "167"  "168"  "169"  "17"   "170"  "171" 
-##  [71] "172"  "173"  "174"  "175"  "176"  "177"  "178"  "179"  "18"   "180" 
-##  [81] "181"  "182"  "183"  "184"  "185"  "186"  "187"  "188"  "189"  "19"  
-##  [91] "190"  "191"  "192"  "193"  "194"  "195"  "196"  "197"  "198"  "199" 
-## [101] "20"   "200"  "201"  "202"  "203"  "204"  "205"  "206"  "207"  "208" 
-## [111] "209"  "21"   "210"  "211"  "212"  "213"  "214"  "215"  "216"  "217" 
-## [121] "218"  "219"  "22"   "220"  "221"  "222"  "223"  "224"  "225"  "226" 
-## [131] "227"  "228"  "229"  "23"   "230"  "231"  "232"  "233"  "234"  "235" 
-## [141] "236"  "237"  "238"  "239"  "24"   "240"  "241"  "242"  "243"  "244" 
-## [151] "245"  "246"  "247"  "248"  "249"  "25"   "250"  "251"  "252"  "253" 
-## [161] "254"  "255"  "256"  "257"  "258"  "259"  "26"   "262"  "263"  "265" 
-## [171] "266"  "267"  "268"  "269"  "27"   "270"  "271"  "272"  "273"  "274" 
-## [181] "275"  "276"  "277"  "278"  "279"  "28"   "280"  "281"  "282"  "283" 
-## [191] "284"  "285"  "286"  "287"  "288"  "289"  "29"   "290"  "291"  "292" 
-## [201] "293"  "294"  "295"  "296"  "297"  "298"  "299"  "3"    "30"   "300" 
-## [211] "301"  "302"  "303"  "304"  "305"  "306"  "307"  "308"  "309"  "31"  
-## [221] "310"  "311"  "312"  "313"  "314"  "315"  "316"  "317"  "318"  "321" 
-## [231] "323"  "324"  "327"  "33"   "336"  "337"  "338"  "339"  "34"   "340" 
-## [241] "341"  "342"  "343"  "344"  "345"  "347"  "349"  "35"   "350"  "351" 
-## [251] "355"  "356"  "357"  "358"  "359"  "36"   "360"  "361"  "362"  "363" 
-## [261] "364"  "365"  "367"  "368"  "369"  "37"   "370"  "371"  "372"  "373" 
-## [271] "374"  "375"  "378"  "39"   "4"    "40"   "41"   "42"   "43"   "44"  
-## [281] "45"   "46"   "47"   "48"   "49"   "5"    "50"   "52"   "53"   "55"  
-## [291] "56"   "58"   "59"   "6"    "60"   "61"   "62"   "63"   "64"   "66"  
-## [301] "67"   "7"    "70"   "71"   "72"   "73"   "74"   "75"   "76"   "77"  
-## [311] "78"   "79"   "8"    "80"   "81"   "84"   "85"   "86"   "87"   "88"  
-## [321] "89"   "9"    "90"   "91"   "92"   "93"   "95"   "96"   "97"   "98"  
-## [331] "99"   "NULL"
+##  [41] "141"  "142"  "144"  "145"  "146"  "147"  "148"  "149"  "15"   "150" 
+##  [51] "151"  "152"  "153"  "154"  "155"  "156"  "157"  "158"  "159"  "16"  
+##  [61] "160"  "162"  "163"  "164"  "166"  "167"  "168"  "169"  "17"   "170" 
+##  [71] "171"  "172"  "173"  "174"  "175"  "176"  "177"  "178"  "179"  "18"  
+##  [81] "180"  "181"  "182"  "183"  "184"  "185"  "186"  "187"  "188"  "189" 
+##  [91] "19"   "190"  "191"  "192"  "193"  "194"  "195"  "196"  "197"  "198" 
+## [101] "199"  "20"   "200"  "201"  "202"  "203"  "204"  "205"  "206"  "207" 
+## [111] "208"  "209"  "21"   "210"  "211"  "212"  "213"  "214"  "215"  "216" 
+## [121] "217"  "218"  "219"  "22"   "220"  "221"  "222"  "223"  "224"  "225" 
+## [131] "226"  "227"  "228"  "229"  "23"   "230"  "231"  "232"  "233"  "234" 
+## [141] "235"  "236"  "237"  "238"  "239"  "24"   "240"  "241"  "242"  "243" 
+## [151] "244"  "245"  "246"  "247"  "248"  "249"  "25"   "250"  "251"  "252" 
+## [161] "253"  "254"  "255"  "256"  "257"  "258"  "259"  "26"   "262"  "263" 
+## [171] "265"  "266"  "267"  "268"  "269"  "27"   "270"  "271"  "272"  "273" 
+## [181] "274"  "275"  "276"  "277"  "278"  "279"  "28"   "280"  "281"  "282" 
+## [191] "283"  "284"  "285"  "286"  "287"  "288"  "289"  "29"   "290"  "291" 
+## [201] "292"  "293"  "294"  "295"  "296"  "297"  "298"  "299"  "3"    "30"  
+## [211] "300"  "301"  "302"  "303"  "304"  "305"  "306"  "307"  "308"  "309" 
+## [221] "31"   "310"  "311"  "312"  "313"  "314"  "315"  "316"  "317"  "318" 
+## [231] "321"  "323"  "324"  "327"  "33"   "336"  "337"  "338"  "339"  "34"  
+## [241] "340"  "341"  "342"  "343"  "344"  "345"  "347"  "349"  "35"   "350" 
+## [251] "351"  "355"  "356"  "357"  "358"  "359"  "36"   "360"  "361"  "362" 
+## [261] "363"  "364"  "365"  "367"  "368"  "369"  "37"   "370"  "371"  "372" 
+## [271] "373"  "374"  "375"  "377"  "378"  "381"  "39"   "4"    "40"   "41"  
+## [281] "42"   "43"   "44"   "45"   "46"   "47"   "48"   "49"   "5"    "50"  
+## [291] "52"   "53"   "55"   "56"   "58"   "59"   "6"    "60"   "61"   "62"  
+## [301] "63"   "64"   "66"   "67"   "7"    "70"   "71"   "72"   "73"   "74"  
+## [311] "75"   "76"   "77"   "78"   "79"   "8"    "80"   "81"   "84"   "85"  
+## [321] "86"   "87"   "88"   "89"   "9"    "90"   "91"   "92"   "93"   "95"  
+## [331] "96"   "97"   "98"   "99"   "NULL"
 ```
 
 ```r
@@ -416,7 +418,7 @@ summary(data$start_station_id)
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-##     3.0    30.0    81.0   112.3   179.0   378.0   11095
+##     3.0    30.0    81.0   113.2   180.0   381.0   11579
 ```
 
 ```r
@@ -437,7 +439,7 @@ sum(is.na(data$start_station_id))
 ```
 
 ```
-## [1] 11095
+## [1] 11579
 ```
 
 ```r
@@ -445,7 +447,7 @@ sum(is.na(data$start_station_name))
 ```
 
 ```
-## [1] 11095
+## [1] 11579
 ```
 
 ```r
@@ -459,7 +461,7 @@ data %>%
 ## # A tibble: 1 x 2
 ##   start_station_id count
 ##              <dbl> <int>
-## 1               NA 11095
+## 1               NA 11579
 ```
 
 ```r
@@ -475,7 +477,7 @@ data %>%
 ## # A tibble: 1 x 2
 ##   start_station_name count
 ##   <chr>              <int>
-## 1 <NA>               11095
+## 1 <NA>               11579
 ```
 
 ```r
@@ -491,7 +493,7 @@ sum(is.na(data$start_station_name)) / nrow(data)
 ```
 
 ```
-## [1] 0.005238623
+## [1] 0.005141519
 ```
 
 ```r
@@ -509,7 +511,7 @@ data %>%
 ## # A tibble: 1 x 2
 ##   end_station_name count
 ##   <chr>            <int>
-## 1 <NA>             11095
+## 1 <NA>             11579
 ```
 
 ```r
@@ -522,32 +524,32 @@ summary(data_clean)
 ```
 
 ```
-##   duration_sec       start_time                 
-##  Min.   :   61.0   Min.   :2017-06-28 09:47:36  
-##  1st Qu.:  359.0   1st Qu.:2018-01-03 17:51:09  
-##  Median :  567.0   Median :2018-05-16 09:34:55  
-##  Mean   :  925.1   Mean   :2018-04-19 08:31:49  
-##  3rd Qu.:  891.0   3rd Qu.:2018-08-08 17:29:35  
-##  Max.   :86369.0   Max.   :2018-10-31 23:58:54  
-##                                                 
+##   duration_sec     start_time                 
+##  Min.   :   61   Min.   :2017-06-28 09:47:36  
+##  1st Qu.:  358   1st Qu.:2018-01-16 16:29:06  
+##  Median :  566   Median :2018-05-28 14:18:18  
+##  Mean   :  915   Mean   :2018-05-01 19:31:28  
+##  3rd Qu.:  887   3rd Qu.:2018-08-24 18:31:31  
+##  Max.   :86369   Max.   :2018-11-30 23:58:26  
+##                                               
 ##     end_time                   start_station_id start_station_name
-##  Min.   :2017-06-28 09:52:55   Min.   :  3.0    Length:2106828    
-##  1st Qu.:2018-01-03 18:03:26   1st Qu.: 30.0    Class :character  
-##  Median :2018-05-16 09:47:58   Median : 81.0    Mode  :character  
-##  Mean   :2018-04-19 08:47:14   Mean   :112.3                      
-##  3rd Qu.:2018-08-08 17:41:51   3rd Qu.:179.0                      
-##  Max.   :2018-11-01 19:03:30   Max.   :378.0                      
+##  Min.   :2017-06-28 09:52:55   Min.   :  3.0    Length:2240479    
+##  1st Qu.:2018-01-16 16:41:27   1st Qu.: 30.0    Class :character  
+##  Median :2018-05-28 14:39:19   Median : 81.0    Mode  :character  
+##  Mean   :2018-05-01 19:46:44   Mean   :113.2                      
+##  3rd Qu.:2018-08-24 18:44:16   3rd Qu.:180.0                      
+##  Max.   :2018-12-01 08:07:53   Max.   :381.0                      
 ##                                                                   
 ##  start_station_latitude start_station_longitude end_station_id 
 ##  Min.   :37.26          Min.   :-122.5          Min.   :  3.0  
 ##  1st Qu.:37.77          1st Qu.:-122.4          1st Qu.: 28.0  
-##  Median :37.78          Median :-122.4          Median : 80.0  
-##  Mean   :37.77          Mean   :-122.4          Mean   :110.5  
-##  3rd Qu.:37.80          3rd Qu.:-122.3          3rd Qu.:178.0  
-##  Max.   :37.88          Max.   :-121.8          Max.   :378.0  
+##  Median :37.78          Median :-122.4          Median : 81.0  
+##  Mean   :37.77          Mean   :-122.4          Mean   :111.4  
+##  3rd Qu.:37.80          3rd Qu.:-122.3          3rd Qu.:179.0  
+##  Max.   :37.88          Max.   :-121.8          Max.   :381.0  
 ##                                                                
 ##  end_station_name   end_station_latitude end_station_longitude
-##  Length:2106828     Min.   :37.26        Min.   :-122.5       
+##  Length:2240479     Min.   :37.26        Min.   :-122.5       
 ##  Class :character   1st Qu.:37.77        1st Qu.:-122.4       
 ##  Mode  :character   Median :37.78        Median :-122.4       
 ##                     Mean   :37.77        Mean   :-122.4       
@@ -555,24 +557,24 @@ summary(data_clean)
 ##                     Max.   :37.88        Max.   :-121.8       
 ##                                                               
 ##    bike_id               user_type       member_birth_year
-##  Length:2106828     Customer  : 355342   Min.   :1881     
-##  Class :character   Subscriber:1751486   1st Qu.:1977     
+##  Length:2240479     Customer  : 370470   Min.   :1881     
+##  Class :character   Subscriber:1870009   1st Qu.:1977     
 ##  Mode  :character                        Median :1985     
 ##                                          Mean   :1982     
 ##                                          3rd Qu.:1990     
 ##                                          Max.   :2000     
-##                                          NA's   :166839   
-##  member_gender    bike_share_for_all_trip weekday           hour      
-##        : 166409   No  :1451803            Sun:175977   Min.   : 0.00  
-##  Female: 474051   Yes : 135325            Mon:329624   1st Qu.: 9.00  
-##  Male  :1437060   NA's: 519700            Tue:362650   Median :14.00  
-##  Other :  29308                           Wed:360963   Mean   :13.52  
-##                                           Thu:350036   3rd Qu.:17.00  
-##                                           Fri:328116   Max.   :23.00  
-##                                           Sat:199462                  
+##                                          NA's   :171926   
+##  member_gender    bike_share_for_all_trip weekday           hour     
+##        : 171496   No  :1572618            Sun:185978   Min.   : 0.0  
+##  Female: 504593   Yes : 148161            Mon:352019   1st Qu.: 9.0  
+##  Male  :1533139   NA's: 519700            Tue:385160   Median :14.0  
+##  Other :  31251                           Wed:381171   Mean   :13.5  
+##                                           Thu:375377   3rd Qu.:17.0  
+##                                           Fri:350477   Max.   :23.0  
+##                                           Sat:210297                 
 ##   is_weekend     
-##  wk_day:1731389  
-##  wk_end: 375439  
+##  wk_day:1844204  
+##  wk_end: 396275  
 ##                  
 ##                  
 ##                  
@@ -617,14 +619,14 @@ head(station_stats)
 
 ```
 ## # A tibble: 6 x 5
-##   station_name        departure_count arrival_count net_change prop_inflow
-##   <chr>                         <int>         <int>      <int>       <dbl>
-## 1 10th Ave at E 15th~             777           813         36      0.0463
-## 2 10th St at Fallon ~            4483          5492       1009      0.225 
-## 3 10th St at Univers~             497           812        315      0.634 
-## 4 11th St at Bryant ~            9959         11423       1464      0.147 
-## 5 11th St at Natoma ~            9145          9356        211      0.0231
-## 6 12th St at 4th Ave             2520          2628        108      0.0429
+##   station_name         departure_count arrival_count net_change prop_inflow
+##   <chr>                          <int>         <int>      <int>       <dbl>
+## 1 10th Ave at E 15th ~             831           849         18      0.0217
+## 2 10th St at Fallon St            4804          5837       1033      0.215 
+## 3 10th St at Universi~             610          1020        410      0.672 
+## 4 11th St at Bryant St           10621         12230       1609      0.151 
+## 5 11th St at Natoma St            9806         10010        204      0.0208
+## 6 12th St at 4th Ave              2520          2628        108      0.0429
 ```
 
 Hmm, already we can see that some station IDs are repeated under slightly different names. Let's dig in to this a little.
@@ -648,21 +650,21 @@ station_info
 ```
 
 ```
-## # A tibble: 356 x 5
-## # Groups:   station_name [346]
-##    station_id station_name         station_latitude station_longitu~ count
-##         <dbl> <chr>                           <dbl>            <dbl> <int>
-##  1          3 Powell St BART Stat~             37.8            -122. 37092
-##  2          4 Cyril Magnin St at ~             37.8            -122.  7687
-##  3          5 Powell St BART Stat~             37.8            -122. 29399
-##  4          6 The Embarcadero at ~             37.8            -122. 43050
-##  5          7 Frank H Ogawa Plaza              37.8            -122. 10552
-##  6          8 The Embarcadero at ~             37.8            -122. 14389
-##  7          9 Broadway at Battery~             37.8            -122. 12874
-##  8         10 Washington St at Ke~             37.8            -122.  8897
-##  9         11 Davis St at Jackson~             37.8            -122. 11667
-## 10         13 Commercial St at Mo~             37.8            -122. 10839
-## # ... with 346 more rows
+## # A tibble: 361 x 5
+## # Groups:   station_name [351]
+##    station_id station_name          station_latitude station_longitu~ count
+##         <dbl> <chr>                            <dbl>            <dbl> <int>
+##  1          3 Powell St BART Stati~             37.8            -122. 39518
+##  2          4 Cyril Magnin St at E~             37.8            -122.  8066
+##  3          5 Powell St BART Stati~             37.8            -122. 31159
+##  4          6 The Embarcadero at S~             37.8            -122. 45169
+##  5          7 Frank H Ogawa Plaza               37.8            -122. 11058
+##  6          8 The Embarcadero at V~             37.8            -122. 15009
+##  7          9 Broadway at Battery ~             37.8            -122. 13600
+##  8         10 Washington St at Kea~             37.8            -122.  9542
+##  9         11 Davis St at Jackson ~             37.8            -122. 12464
+## 10         13 Commercial St at Mon~             37.8            -122. 11485
+## # ... with 351 more rows
 ```
 
 ```r
@@ -670,7 +672,7 @@ length(unique(station_info$station_id))
 ```
 
 ```
-## [1] 331
+## [1] 334
 ```
 
 ```r
@@ -678,7 +680,7 @@ length(unique(station_info$station_name))
 ```
 
 ```
-## [1] 346
+## [1] 351
 ```
 
 ```r
@@ -686,7 +688,7 @@ length(unique(data_clean$start_station_latitude))
 ```
 
 ```
-## [1] 349
+## [1] 354
 ```
 
 ```r
@@ -694,7 +696,7 @@ length(unique(data_clean$start_station_longitude))
 ```
 
 ```
-## [1] 348
+## [1] 353
 ```
 
 At last check: 
@@ -758,13 +760,13 @@ head(id_count, n = 20)
 ## 11        173        2
 ## 12        212        2
 ## 13        224        2
-## 14        245        2
-## 15        250        2
-## 16        280        2
-## 17        281        2
-## 18        302        2
-## 19        321        2
-## 20          3        1
+## 14        234        2
+## 15        245        2
+## 16        250        2
+## 17        280        2
+## 18        281        2
+## 19        302        2
+## 20        321        2
 ```
 
 19 station IDs are associated with >1 lat/long location. 9 station names are associated with >1 lat/long locations. Probably different dock locations at the same general location?
@@ -849,23 +851,23 @@ kable(temp)
 
  station_id   n_per_id  station_name                      station_count   station_latitude   station_longitude   departure_count   arrival_count   net_change   prop_inflow
 -----------  ---------  -------------------------------  --------------  -----------------  ------------------  ----------------  --------------  -----------  ------------
-        244          3  Shattuck Ave at Hearst Ave                    3           37.87368           -122.2685              2993            3068           75     0.0250585
-        244          3  Shattuck Ave at Hearst Ave                    3           37.87375           -122.2686              2993            3068           75     0.0250585
-        244          3  Shattuck Ave at Hearst Ave                    3           37.87379           -122.2686              2993            3068           75     0.0250585
-        192          3  37th St at West St                            2           37.82670           -122.2718              1004             991          -13    -0.0129482
-        192          3  37th St at West St                            2           37.82670           -122.2718              1004             991          -13    -0.0129482
+        244          3  Shattuck Ave at Hearst Ave                    3           37.87368           -122.2685              3256            3351           95     0.0291769
+        244          3  Shattuck Ave at Hearst Ave                    3           37.87375           -122.2686              3256            3351           95     0.0291769
+        244          3  Shattuck Ave at Hearst Ave                    3           37.87379           -122.2686              3256            3351           95     0.0291769
+        192          3  37th St at West St                            2           37.82670           -122.2718              1052            1034          -18    -0.0171103
+        192          3  37th St at West St                            2           37.82670           -122.2718              1052            1034          -18    -0.0171103
         208          3  S. 4th St at San Carlos St                    2           37.33004           -121.8818              1865            1896           31     0.0166220
         208          3  S. 4th St at San Carlos St                    2           37.33284           -121.8839              1865            1896           31     0.0166220
-        130          2  22nd St Caltrain Station                      2           37.75737           -122.3921              7850            7744         -106    -0.0135032
-        130          2  22nd St Caltrain Station                      2           37.75772           -122.3918              7850            7744         -106    -0.0135032
-        154          2  Doyle St at 59th St                           2           37.84192           -122.2880              1388            1525          137     0.0987032
-        154          2  Doyle St at 59th St                           2           37.84192           -122.2880              1388            1525          137     0.0987032
-        224          2  21st Ave at International Blvd                2           37.78485           -122.2393               152             195           43     0.2828947
-        224          2  21st Ave at International Blvd                2           37.78516           -122.2389               152             195           43     0.2828947
-        245          2  Downtown Berkeley BART                        2           37.87014           -122.2684              8812           12846         4034     0.4577848
-        245          2  Downtown Berkeley BART                        2           37.87035           -122.2678              8812           12846         4034     0.4577848
-        250          2  North Berkeley BART Station                   2           37.87356           -122.2831              2927            2853          -74    -0.0252819
-        250          2  North Berkeley BART Station                   2           37.87401           -122.2830              2927            2853          -74    -0.0252819
+        130          2  22nd St Caltrain Station                      2           37.75737           -122.3921              8473            8346         -127    -0.0149888
+        130          2  22nd St Caltrain Station                      2           37.75772           -122.3918              8473            8346         -127    -0.0149888
+        154          2  Doyle St at 59th St                           2           37.84192           -122.2880              1458            1627          169     0.1159122
+        154          2  Doyle St at 59th St                           2           37.84192           -122.2880              1458            1627          169     0.1159122
+        224          2  21st Ave at International Blvd                2           37.78485           -122.2393               162             209           47     0.2901235
+        224          2  21st Ave at International Blvd                2           37.78516           -122.2389               162             209           47     0.2901235
+        245          2  Downtown Berkeley BART                        2           37.87014           -122.2684              9553           13827         4274     0.4473987
+        245          2  Downtown Berkeley BART                        2           37.87035           -122.2678              9553           13827         4274     0.4473987
+        250          2  North Berkeley BART Station                   2           37.87356           -122.2831              3213            3104         -109    -0.0339247
+        250          2  North Berkeley BART Station                   2           37.87401           -122.2830              3213            3104         -109    -0.0339247
         302          2  Tamien Station                                2           37.31285           -121.8829               167             198           31     0.1856287
         302          2  Tamien Station                                2           37.34772           -121.8909               167             198           31     0.1856287
 
@@ -929,7 +931,7 @@ station_stats %>% arrange(desc(station_count)) %>% print(n = 20)
 ```
 
 ```
-## # A tibble: 356 x 10
+## # A tibble: 361 x 10
 ##    station_id n_per_id station_name station_count station_latitude
 ##         <dbl>    <int> <chr>                <int>            <dbl>
 ##  1        244        3 Shattuck Av~             3             37.9
@@ -952,7 +954,7 @@ station_stats %>% arrange(desc(station_count)) %>% print(n = 20)
 ## 18        302        2 Tamien Stat~             2             37.3
 ## 19        302        2 Tamien Stat~             2             37.3
 ## 20        192        3 MLK Jr Way ~             1             37.8
-## # ... with 336 more rows, and 5 more variables: station_longitude <dbl>,
+## # ... with 341 more rows, and 5 more variables: station_longitude <dbl>,
 ## #   departure_count <int>, arrival_count <int>, net_change <int>,
 ## #   prop_inflow <dbl>
 ```
@@ -1009,7 +1011,7 @@ station_stats %>% print(n = 10)
 ```
 
 ```
-## # A tibble: 346 x 8
+## # A tibble: 351 x 8
 ##    station_id station_name station_latitude station_longitu~
 ##         <dbl> <chr>                   <dbl>            <dbl>
 ##  1        192 37th St at ~             37.8            -122.
@@ -1022,7 +1024,7 @@ station_stats %>% print(n = 10)
 ##  8        221 12th St at ~             37.8            -122.
 ##  9        221 6th Ave at ~             37.8            -122.
 ## 10        221 E 12th St a~             37.8            -122.
-## # ... with 336 more rows, and 4 more variables: departure_count <int>,
+## # ... with 341 more rows, and 4 more variables: departure_count <int>,
 ## #   arrival_count <int>, net_change <int>, prop_inflow <dbl>
 ```
 
@@ -1054,33 +1056,37 @@ station_stats %>% filter(n_per_id > 1) %>% kable()
 
  station_id   n_per_id  station_name                                         station_latitude   station_longitude   departure_count   arrival_count   net_change   prop_inflow
 -----------  ---------  --------------------------------------------------  -----------------  ------------------  ----------------  --------------  -----------  ------------
-        205          3  Miles Ave at Cavour St                                       37.83880           -122.2587               455             379          -76    -0.1670330
+        205          3  Miles Ave at Cavour St                                       37.83880           -122.2587               584             500          -84    -0.1438356
         205          3  Miles Ave at Cavour St (Temporary Location)                  37.83880           -122.2587               361             370            9     0.0249307
         205          3  Shafter Ave at Cavour St                                     37.83795           -122.2572              1158            1000         -158    -0.1364421
         221          3  12th St at 6th Ave                                           37.79435           -122.2539               661             766          105     0.1588502
-        221          3  6th Ave at E 12th St (Temporary Location)                    37.79440           -122.2538               208             206           -2    -0.0096154
+        221          3  6th Ave at E 12th St (Temporary Location)                    37.79440           -122.2538               254             240          -14    -0.0551181
         221          3  E 12th St at 6th Ave                                         37.79435           -122.2539               122             122            0     0.0000000
         233          3  12th St at 4th Ave                                           37.79581           -122.2556              2520            2628          108     0.0428571
-        233          3  4th Ave at E 12th St (Temporary Location)                    37.79591           -122.2555               364             445           81     0.2225275
+        233          3  4th Ave at E 12th St (Temporary Location)                    37.79591           -122.2555               485             579           94     0.1938144
         233          3  E 12th St at 4th Ave                                         37.79581           -122.2556               214             249           35     0.1635514
-        192          2  37th St at West St                                           37.82670           -122.2718              1004             991          -13    -0.0129482
+        192          2  37th St at West St                                           37.82670           -122.2718              1052            1034          -18    -0.0171103
         192          2  MLK Jr Way at 36th St (Temporary Location)                   37.82579           -122.2694               183             175           -8    -0.0437158
         208          2  S. 4th St at San Carlos St                                   37.33004           -121.8818              1865            1896           31     0.0166220
         208          2  William St at 4th St (Temporary Location)                    37.32996           -121.8819                26              50           24     0.9230769
-         50          2  2nd St at Townsend St                                        37.78053           -122.3903             15196           15368          172     0.0113188
+         50          2  2nd St at Townsend St                                        37.78053           -122.3903             16624           16825          201     0.0120910
          50          2  2nd St at Townsend St - Coming Soon                          37.78053           -122.3903              6605            7277          672     0.1017411
-        101          2  Potrero Ave at 15th St (Temporary Location)                  37.76663           -122.4077              1732            1789           57     0.0329099
+        101          2  Potrero Ave at 15th St (Temporary Location)                  37.76663           -122.4077              2128            2180           52     0.0244361
         101          2  San Bruno Ave at 16th St                                     37.76601           -122.4057              3318            3362           44     0.0132610
         173          2  Shattuck Ave at 55th Ave                                     37.84036           -122.2645              1336            1218         -118    -0.0883234
-        173          2  Shattuck Ave at 55th St                                      37.84036           -122.2645               915             903          -12    -0.0131148
+        173          2  Shattuck Ave at 55th St                                      37.84036           -122.2645              1024            1021           -3    -0.0029297
         212          2  Mosswood Park                                                37.82493           -122.2605              3652            4041          389     0.1065170
-        212          2  Webster St at MacArthur Blvd (Temporary Location)            37.82501           -122.2616               356             350           -6    -0.0168539
-        280          2  6th St at San Fernando St (Temporary Location)               37.33704           -121.8841              1532            1558           26     0.0169713
+        212          2  Webster St at MacArthur Blvd (Temporary Location)            37.82501           -122.2616               493             473          -20    -0.0405680
+        234          2  Farnam St at Fruitvale Ave                                   37.77806           -122.2254                 9               8           -1    -0.1111111
+        234          2  Fruitvale Ave at International Blvd                          37.77768           -122.2258               231             262           31     0.1341991
+        280          2  6th St at San Fernando St (Temporary Location)               37.33704           -121.8841              1959            2004           45     0.0229709
         280          2  San Fernando at 7th St                                       37.33725           -121.8831              3506            3992          486     0.1386195
         281          2  9th St at San Fernando                                       37.33840           -121.8808              1410            1367          -43    -0.0304965
-        281          2  9th St at San Fernando St                                    37.33840           -121.8808               403             414           11     0.0272953
+        281          2  9th St at San Fernando St                                    37.33840           -121.8808               549             576           27     0.0491803
         321          2  5th at Folsom                                                37.78015           -122.4031              8659            8821          162     0.0187089
-        321          2  5th St at Folsom                                             37.78015           -122.4031              3762            3806           44     0.0116959
+        321          2  5th St at Folsom                                             37.78015           -122.4031              4651            4696           45     0.0096753
+        358          2  Lane St at Van Dyke Ave                                      37.72925           -122.3924                35              33           -2    -0.0571429
+        358          2  Williams Ave at 3rd St                                       37.72928           -122.3929                 3               4            1     0.3333333
 
 So we can see how names can differ slightly, and therefore station use stats appear separate. To lump by ID, would need to recalculate.
 
@@ -1211,19 +1217,18 @@ rm(coord_df, sp, spdf, spdf_elev_epqs, prj_dd)
 ```
 ## Parsed with column specification:
 ## cols(
-##   station_id = col_integer(),
-##   n_per_id = col_integer(),
+##   station_id = col_double(),
+##   n_per_id = col_double(),
 ##   station_name = col_character(),
 ##   station_latitude = col_double(),
 ##   station_longitude = col_double(),
 ##   city = col_character(),
-##   departure_count = col_integer(),
-##   arrival_count = col_integer(),
-##   net_change = col_integer(),
+##   departure_count = col_double(),
+##   arrival_count = col_double(),
+##   net_change = col_double(),
 ##   prop_inflow = col_double(),
 ##   is_transit = col_logical(),
 ##   elevation = col_double(),
-##   elevation.1 = col_integer(),
 ##   elev_units = col_character(),
 ##   station_longitude.1 = col_double(),
 ##   station_latitude.1 = col_double()
