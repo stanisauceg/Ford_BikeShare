@@ -1,36 +1,12 @@
 library(shiny)
 library(tidyverse)
 
-data_clean <- data.table::fread("data_clean.csv") %>% 
-  as.tbl() %>%
-  mutate(start_station_city = as.factor(start_station_city),
-         end_station_city = as.factor(end_station_city),
-         member_gender = as.factor(member_gender),
+data_clean <- readr::read_csv(file.path("results", "sample_day.csv")) %>%
+  mutate(member_gender = as.factor(member_gender),
          user_type = as.factor(user_type),
          bike_share_for_all_trip = as.factor(bike_share_for_all_trip),
-         start_time = ymd_hms(start_time),
-         end_time = ymd_hms(end_time),
-         bike_id = as.character(bike_id),
          weekday = as.factor(weekday),
          is_weekend = as.factor(is_weekend))
-
-station_stats <- readr::read_csv(file.path("results", "station_stats.csv")) %>% 
-  as.tbl() %>%
-  mutate(city = as.factor(city))
-
-
-# set scaling factor: what is the duration, in days, of the data series?
-get_timespan <- function(time_data){
-  time_diff <- max(time_data) - min(time_data)
-  return(time_diff[[1]])
-}
-
-timespan <- get_timespan(data_clean$start_time)
-
-# randomly subsample the dataset to obtain an "average" day, at certain times
-set.seed(24)
-sample_day <- sample_frac(data_clean, size = 1/timespan)
-
 
 ui <- fluidPage(
   sidebarLayout(
