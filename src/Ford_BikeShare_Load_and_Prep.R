@@ -442,3 +442,16 @@ data_clean <- data_clean %>%
 # readr::write_csv(data_clean, path = file.path("results", "data_clean.csv"))
 # readr::write_csv(data, path = file.path("results", "data.csv"))
 # readr::write_csv(station_stats, path = file.path("results", "station_stats.csv"))
+
+# set scaling factor: what is the duration, in days, of the data series?
+get_timespan <- function(time_data){
+  time_diff <- max(time_data) - min(time_data)
+  return(time_diff[[1]])
+}
+
+timespan <- get_timespan(data_clean$start_time)
+
+# randomly subsample the dataset to obtain an "average" day, at certain times
+set.seed(24)
+sample_day <- sample_frac(data_clean, size = 1/timespan)
+# readr::write_csv(sample_day, path = file.path("results", "sample_day.csv"))
