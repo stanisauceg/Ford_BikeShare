@@ -1,7 +1,33 @@
-# to start, run all code from "Ford_BikeShare_Load_and_Prep.R"
-
 library(hexbin)
 library(viridis)
+
+data <- data.table::fread(file.path("results", "data.csv")) %>% 
+  as.tbl()%>%
+  mutate(member_gender = as.factor(member_gender),
+         user_type = as.factor(user_type),
+         bike_share_for_all_trip = as.factor(bike_share_for_all_trip),
+         start_time = ymd_hms(start_time),
+         end_time = ymd_hms(end_time),
+         bike_id = as.character(bike_id),
+         weekday = as.factor(weekday),
+         is_weekend = as.factor(is_weekend))
+
+data_clean <- data.table::fread(file.path("results", "data_clean.csv")) %>% 
+  as.tbl() %>%
+  mutate(start_station_city = as.factor(start_station_city),
+         end_station_city = as.factor(end_station_city),
+         member_gender = as.factor(member_gender),
+         user_type = as.factor(user_type),
+         bike_share_for_all_trip = as.factor(bike_share_for_all_trip),
+         start_time = ymd_hms(start_time),
+         end_time = ymd_hms(end_time),
+         bike_id = as.character(bike_id),
+         weekday = as.factor(weekday),
+         is_weekend = as.factor(is_weekend))
+
+station_stats <- readr::read_csv(file.path("results", "station_stats.csv")) %>% 
+  as.tbl() %>%
+  mutate(city = as.factor(city))
 
 ##### EDA, part 1 ######################################################
 

@@ -439,3 +439,6 @@ data_clean <- data_clean %>%
          duration_sec:is_weekend) %>%
   mutate(elev_change = end_station_elevation - start_station_elevation)
 
+# readr::write_csv(data_clean, path = file.path("results", "data_clean.csv"))
+# readr::write_csv(data, path = file.path("results", "data.csv"))
+# readr::write_csv(station_stats, path = file.path("results", "station_stats.csv"))
