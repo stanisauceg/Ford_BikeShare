@@ -1,7 +1,7 @@
 library(shiny)
 library(tidyverse)
 
-data_clean <- data.table::fread(file.path("results", "data_clean.csv")) %>% 
+data_clean <- data.table::fread("data_clean.csv") %>% 
   as.tbl() %>%
   mutate(start_station_city = as.factor(start_station_city),
          end_station_city = as.factor(end_station_city),
