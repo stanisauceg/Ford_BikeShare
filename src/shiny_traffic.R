@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(lubridate)
 
 sample_day <- readr::read_csv(file.path("results", "sample_day.csv")) %>%
   mutate(member_gender = as.factor(member_gender),
