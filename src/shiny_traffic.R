@@ -1,7 +1,7 @@
 library(shiny)
 library(tidyverse)
 
-data_clean <- readr::read_csv(file.path("results", "sample_day.csv")) %>%
+sample_day <- readr::read_csv(file.path("results", "sample_day.csv")) %>%
   mutate(member_gender = as.factor(member_gender),
          user_type = as.factor(user_type),
          bike_share_for_all_trip = as.factor(bike_share_for_all_trip),
