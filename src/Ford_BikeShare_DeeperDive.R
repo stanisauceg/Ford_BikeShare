@@ -95,10 +95,10 @@ st_crs(sf_shp_crs)
 the_crs <- crs(sfn_dem, asText = TRUE)
 
 crs(sfn_dem)
-sfn_dem_crs <- projectRaster(sfn_dem, crs = crs(bikeways), method = "ngb")
+sfn_dem_crs <- projectRaster(sfn_dem, crs = st_crs(bikeways), method = "ngb")
 sfn_dem_crs_df <- as.data.frame(sfn_dem_crs, xy = TRUE)
-bikeways_crs <- st_transform(bikeways, crs = crs(sf_shp))
-sf_shp_crs <- st_transform(sf_shp, crs = crs(bikeways))
+bikeways_crs <- st_transform(bikeways, crs = st_crs(sf_shp))
+sf_shp_crs <- st_transform(sf_shp, crs = st_crs(bikeways))
 
 #library(rasterVis)
 library(viridis)
