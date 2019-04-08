@@ -1,13 +1,20 @@
 library(shiny)
+library(sf)
 library(tidyverse)
 library(lubridate)
 
-sample_day <- readr::read_csv(file.path("results", "sample_day.csv")) %>%
+sample_day <- readr::read_csv(file.path("..", "results", "sample_day.csv")) %>%
   mutate(member_gender = as.factor(member_gender),
          user_type = as.factor(user_type),
          bike_share_for_all_trip = as.factor(bike_share_for_all_trip),
          weekday = as.factor(weekday),
          is_weekend = as.factor(is_weekend))
+
+bikeways <- st_read("../data/SF_bikeways/bikeways.shp")
+sf_shp <- st_read("../data/BayArea/bayarea_general.shp")
+
+sample_day_sf <- st_as_sf(sample_day, coords = c("start_station_longitude", "start_station_latitude"), crs = st_crs(bikeways))
+sf_shp_crs <- st_transform(sf_shp, crs = st_crs(bikeways))
 
 ui <- fluidPage(
   sidebarLayout(
@@ -49,6 +56,8 @@ server <- function(input, output) {
   # Create scatterplot object the plotOutput function is expecting
   output$map <- renderPlot({
     ggplot(sample_day %>% filter(hour(start_time) == input$hr)) +
+      geom_sf(data = sf_shp_crs, color = "black", fill = "NA") +
+      geom_sf(data = bikeways, color = "cornflower blue") +
       geom_segment(aes(x = start_station_longitude, y = start_station_latitude,
                      xend = end_station_longitude, yend = end_station_latitude),
                  alpha = 0.1, show.legend = FALSE) +
@@ -56,13 +65,13 @@ server <- function(input, output) {
       xlim(c(-122.48, -122.37)) + 
       ylim(c(37.745, 37.81)) +
       theme_bw() +
-      coord_equal() +
+      coord_sf() +
       geom_point(aes(x = start_station_longitude, y = start_station_latitude),
                  color = "blue", alpha = 0.2, stat = "sum") +
       geom_point(aes(x = end_station_longitude, y = end_station_latitude),
                  color = "red", alpha = 0.15, stat = "sum") +
-      labs(title = "SF hourly bike traffic", x = "Longitude", y = "Latitude", 
-           size = "departures \nand arrivals \nper hour")
+      labs(title = "San Francisco hourly bikeshare traffic", x = "Longitude", y = "Latitude", 
+           size = "Average \ndepartures (blue)\nand arrivals (red)\nper hour")
   })
 } 
 
